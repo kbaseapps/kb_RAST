@@ -1,5 +1,5 @@
 use strict;
-use Data::Dumper;
+use Data::Dumper qw(Dumper);
 use Test::More;
 use Config::Simple;
 use Time::HiRes qw(time);
@@ -41,10 +41,42 @@ eval {
     #
     # Check returned data with
     # ok(ret->{...} eq <expected>, "tested item") or other Test::More methods
-    my $ret = $impl->run_kb_RAST({workspace_name => get_ws_name(),
-                                         parameter_1 => "Hello world"});
+    # my $ret = $impl->run_kb_RAST({workspace_name => get_ws_name(),
+    #                                     parameter_1 => "Hello world"});
 
 };
+
+my @default_stages = (
+    { name => 'call_features_CDS_prodigal' },
+    { name => 'call_features_CDS_glimmer3', failure_is_not_fatal => 1,
+      glimmer3_parameters => { min_training_len => '2000'} },
+    { name => 'call_features_rRNA_SEED' },
+    { name => 'call_features_tRNA_trnascan' },
+    { name => 'call_selenoproteins', failure_is_not_fatal => 1 },
+    { name => 'call_pyrrolysoproteins', failure_is_not_fatal => 1 },
+    { name => 'call_features_repeat_region_SEED',
+          repeat_region_SEED_parameters => {} },
+    { name => 'call_features_strep_suis_repeat',
+          condition => '$genome->{scientific_name} =~ /^Streptococcus\s/' },
+    { name => 'call_features_strep_pneumo_repeat',
+          condition => '$genome->{scientific_name} =~ /^Streptococcus\s/' },
+    { name => 'call_features_crispr', failure_is_not_fatal => 1 },
+    { name => 'call_features_CDS_genemark' }
+  );
+my $default_wf = { stages => \@default_stages };
+
+
+subtest 'run_rast_workflow' => sub {
+    # 1. creating default genome object
+    my $inputgenome1 = {
+        id => "test_kb_RAST_1",
+        features => []
+    };
+    my $wf = {
+        [{name => 'call_features_CDS_prodigal' }]
+    };
+};
+
 my $err = undef;
 if ($@) {
     $err = $@;
