@@ -1,25 +1,53 @@
 use strict;
 use Data::Dumper qw(Dumper);
-use Test::More;
+use Test::Most;
 use Config::Simple;
+use Carp qw(croak);
+use File::Compare;
 use Time::HiRes qw(time);
 use Bio::KBase::AuthToken;
 use installed_clients::WorkspaceClient;
+
 use kb_RAST::kb_RASTImpl;
 
+## global variables
 local $| = 1;
-my $token = $ENV{'KB_AUTH_TOKEN'};
+my $token       = $ENV{'KB_AUTH_TOKEN'};
 my $config_file = $ENV{'KB_DEPLOYMENT_CONFIG'};
-my $config = new Config::Simple($config_file)->get_block('kb_RAST');
+my $config      = new Config::Simple($config_file)->get_block('kb_RAST');
 my $ws_url = $config->{"workspace-url"};
 my $ws_name = undef;
 my $ws_client = new installed_clients::WorkspaceClient($ws_url,token => $token);
 my $scratch = $config->{scratch};
 my $callback_url = $ENV{'SDK_CALLBACK_URL'};
-my $auth_token = Bio::KBase::AuthToken->new(token => $token, ignore_authrc => 1, auth_svc=>$config->{'auth-service-url'});
-my $ctx = LocalCallContext->new($token, $auth_token->user_id);
+my $auth_token  = Bio::KBase::AuthToken->new(
+    token         => $token,
+    ignore_authrc => 1,
+    auth_svc      => $config->{ 'auth-service-url' }
+);
+
+my $ctx           = LocalCallContext->new($token, $auth_token->user_id);
 $kb_RAST::kb_RASTServer::CallContext = $ctx;
-my $impl = new kb_RAST::kb_RASTImpl();
+my $rast_impl = new kb_RAST::kb_RASTImpl->new();
+my $scratch = $config->{ 'scratch' };    #'/kb/module/work/tmp';
+my $outgn_name = 'rasted_genome';
+
+
+##-----------------Test Blocks--------------------##
+
+my $obj_Echinacea = "55141/242/1";  # prod genome
+my $obj_Echinacea_ann = "55141/247/1";  # prod genome
+my $obj_Ecoli = "55141/212/1";  # prod genome
+my $obj_Ecoli_ann = "55141/252/1";  # prod genome
+my $obj_asmb = "55141/243/1";  # prod assembly
+my $obj_asmb_ann = "55141/244/1";  # prod assembly
+my $obj_asmb_refseq = "55141/266/3";  # prod assembly
+my $obj1 = "37798/14/1";  # appdev
+my $obj2 = "37798/15/1";  # appdev
+my $obj3 = "55141/77/1";  # prod KBaseGenomeAnnotations.Assembly
+my $obj_65386_1 = '65386/2/1';  # same as 63171/436/1, i.e., GCF_003058445.1
+my $obj_65386_2 = '65386/12/1';
+
 
 sub get_ws_name {
     if (!defined($ws_name)) {
@@ -30,6 +58,8 @@ sub get_ws_name {
     return $ws_name;
 }
 
+my $ws_client     = $self->get_ws_client();
+my $ws_name       = $self->get_ws_name();
 
 eval {
 
@@ -46,6 +76,7 @@ eval {
 
 };
 
+=begin
 my @default_stages = (
     { name => 'call_features_CDS_prodigal' },
     { name => 'call_features_CDS_glimmer3', failure_is_not_fatal => 1,
@@ -64,7 +95,7 @@ my @default_stages = (
     { name => 'call_features_CDS_genemark' }
   );
 my $default_wf = { stages => \@default_stages };
-
+=cut
 
 subtest 'run_rast_workflow' => sub {
     # 1. creating default genome object

@@ -3,38 +3,55 @@ A KBase module: kb_RAST
 */
 
 module kb_RAST {
+    /*
+        defined as [contig, start, strand, end]
+    */
+    typedef tuple<string, int, string, int> location_spec;
 
     /*
         a basic 'dry' feature data structure for building the dummy protein object
         for RAST annotation
 
         Required parameters for PseudoFeature:
-        fid: feature id,
-        protein_translation: protein sequence
+        fid - feature id,
+        protein_translation - protein sequence
 
-        Optional parameters for PseudoFeature:
-        feature_type: feature type,
-        location: protein location,
-        annotator: annotation source,
-        annotation: annotation content
+        @optional feature_type
+        @optional location
+        @optional annotator
+        @optional annotation
     */
     typedef structure{
         string fid;
+        string protein_translation;
         string feature_type;
-        list<list<string>> location;
+        list<location_spec> location;
         string annotator;
         string annotation;
-        string protein_translation;
     } PseudoFeature;
 
+
     /*
-    Required parameters for run_rast_workflow rast_annotate_ama:
+    Required parameters for run_rast_workflow:
         genome_id - name/reference to a Genome or Assembly object,
         features - protein features to be annotated
     */
     typedef structure {
         string genome_id;
         list<PseudoFeature> features;
+    } PseudoGenome;
+
+    typedef structure {
+        map<string, map<string, string>>;
+    } AnnotateStage;
+
+    typedef structure {
+        list<AnnotateStage> stages;
+    } RASTWorkflow;
+
+    typedef structure {
+        PseudoGenome pseudo_genome;
+        RASTWorkflow rast_workflow;
     } RunRastWorkflowParams;
 
     typedef structure {
